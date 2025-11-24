@@ -19,3 +19,9 @@ def calculate_fitness(df, solution):
         total += city_distance(c1, c2)
 
     return total
+
+
+def info(solution, fitness_value):
+    route_str = " ".join(str(c) for c in solution)
+    print(f"route: {route_str}")
+    print(f"fitness: {fitness_value}")
