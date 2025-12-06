@@ -55,3 +55,121 @@ def create_population(df, size, greedy_solutions=None):
         random.shuffle(s)
         population.append(s)
     return population
+
+
+# task 13
+def population_info(df, population):
+    fitness_list = [calculate_fitness(df, sol) for sol in population]
+    fitness_list_sorted = sorted(fitness_list)
+
+    size = len(population)
+    best = fitness_list_sorted[0]
+    worst = fitness_list_sorted[-1]
+
+    mid = size // 2
+    if size % 2 == 1:
+        median = fitness_list_sorted[mid]
+    else:
+        median = (fitness_list_sorted[mid - 1] + fitness_list_sorted[mid]) / 2
+
+    print(f"population size: {size}")
+    print(f"best fitness: {best}")
+    print(f"median fitness: {median}")
+    print(f"worst fitness: {worst}")
+
+
+# task 14
+def tournament_selection(df, population, tournament_size):
+    candidates = random.sample(population, tournament_size)
+    best = min(candidates, key=lambda sol: calculate_fitness(df, sol))
+    return best
+
+
+# task 15
+def ordered_crossover(parent1, parent2):
+    size = len(parent1)
+    a, b = sorted(random.sample(range(size), 2))
+    child = [None] * size
+
+    child[a : b + 1] = parent1[a : b + 1]
+    used = set(child[a : b + 1])
+
+    p2_idx = (b + 1) % size
+    child_idx = (b + 1) % size
+
+    while None in child:
+        gene = parent2[p2_idx]
+        if gene not in used:
+            child[child_idx] = gene
+            used.add(gene)
+            child_idx = (child_idx + 1) % size
+        p2_idx = (p2_idx + 1) % size
+
+    return child
+
+
+# task 16
+def inversion_mutation(individual, mutation_prob):
+    if random.random() >= mutation_prob:
+        return individual
+    size = len(individual)
+    i, j = sorted(random.sample(range(size), 2))
+    child = individual.copy()
+    child[i : j + 1] = reversed(child[i : j + 1])
+    return child
+
+
+# task 17
+def new_epoch(df, population, tournament_size, crossover_prob, mutation_prob):
+    new_population = []
+    best_solution = min(population, key=lambda sol: calculate_fitness(df, sol))
+
+    pop_size = len(population)
+
+    while len(new_population) < pop_size:
+        P1 = tournament_selection(df, population, tournament_size)
+        P2 = tournament_selection(df, population, tournament_size)
+
+        if random.random() < crossover_prob:
+            O1 = ordered_crossover(P1, P2)
+        else:
+            O1 = P1.copy()
+
+        O1 = inversion_mutation(O1, mutation_prob)
+
+        new_population.append(O1)
+
+        if calculate_fitness(df, O1) < calculate_fitness(df, best_solution):
+            best_solution = O1
+
+    return new_population, best_solution
+
+
+# task 20
+
+
+def run_ga(
+    df, initial_population, epochs, tournament_size, crossover_prob, mutation_prob
+):
+    pop = initial_population
+    best = min(pop, key=lambda s: calculate_fitness(df, s))
+    best_score = calculate_fitness(df, best)
+
+    history = []
+
+    for _ in range(epochs):
+        pop, best_epoch = new_epoch(
+            df,
+            pop,
+            tournament_size,
+            crossover_prob,
+            mutation_prob,
+        )
+        score = calculate_fitness(df, best_epoch)
+        if score < best_score:
+            best = best_epoch
+            best_score = score
+
+        history.append(best_score)
+
+    return history, best, best_score
